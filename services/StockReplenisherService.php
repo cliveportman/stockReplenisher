@@ -127,8 +127,13 @@ class StockReplenisherService extends BaseApplicationComponent
 
         		$quantityToReplenish = $lineItem->qty - $newQuantity;
 
+                // REPLENISH THE STOCK
+                $updatedStock = craft()->stockReplenisher->replenishStock($lineItem->purchasable, $quantityToReplenish);
+
         		// SET THE LINE ITEM QUANTITY TO ZERO
         		$newLineItemQty = craft()->stockReplenisher->updateLineItemQty($order, $lineItem, $newQuantity);
+                $message = "Line item #$lineItem->id could not be updated";
+                StockReplenisherPlugin::log($message, LogLevel::Error);
                 if (!$newLineItemQty) return FALSE;
 
                 /************************
@@ -142,9 +147,6 @@ class StockReplenisherService extends BaseApplicationComponent
         		} elseif ($lineItem->purchasableId) {
                     $updatedRegister = craft()->registration->removeRowsFromRegister($order, $lineItem, $quantityToReplenish);
                 }
-
-	        	// REPLENISH THE STOCK
-                $updatedStock = craft()->stockReplenisher->replenishStock($lineItem->purchasable, $quantityToReplenish);
 	        }
         }
         
@@ -190,9 +192,6 @@ class StockReplenisherService extends BaseApplicationComponent
         	// SET THE QUANTITY AND NOTE
 	        $lineItem->qty = $newQuantity;
 	        $lineItem->note = $note;
-
-            //$message = var_dump($lineItem);
-            //StockReplenisherPlugin::log($message, LogLevel::Error);
 
 	        // SAVE THE LINE ITEM
 	        if (craft()->commerce_lineItems->saveLineItem($lineItem)) {
